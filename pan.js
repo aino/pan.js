@@ -1,0 +1,320 @@
+/**
+ * pan.js v 0.1 2011-09-28
+ * http://aino.com
+ *
+ * Copyright (c) 2011, Aino
+ * Licensed under the MIT license.
+ *
+**/
+
+/*global Pan:true */
+
+(function(window) {
+
+    var SMOOTHNESS = 3.2,
+
+        document = window.document,
+
+        coords = function( e ) {
+            return 'touches' in e && e.touches.length ? {
+                x: e.touches[0].pageX,
+                y: e.touches[0].pageY
+            } : {
+                x: e.clientX,
+                y: e.clientY
+            };
+        },
+
+        dec = function( num ) {
+
+            if ( typeof num != 'number' ) {
+                num = num * 1;
+            }
+
+            var n = num.toFixed( 2 ) * 1;
+            return Math.abs(n) > 0.2 ? n : 0;
+        },
+
+        M = Math,
+
+        pf = parseFloat,
+
+        pos,
+
+        support = ( typeof document.documentElement.style.WebkitTransform !== 'undefined' ),
+
+        attach = !!( 'attachEvent' in document ),
+
+        addEvent = function( elem, type, fn ) {
+            if ( attach ) {
+                elem.attachEvent( 'on' + type, fn );
+            } else if ('addEventListener' in document) {
+                elem.addEventListener( type, fn );
+            }
+        },
+
+        removeEvent = function( elem, type, fn ) {
+            if ( attach ) {
+                elem.detachEvent( 'on' + type, fn );
+            } else if ('removeEventListener' in document) {
+                elem.removeEventListener( type, fn );
+            }
+        },
+
+        retfalse = function() {
+            return false;
+        },
+
+        getStyle = function( elem, m ) {
+            if ( 'defaultView' in document ) {
+                return document.defaultView.getComputedStyle(elem, '').getPropertyValue( m );
+            } else if ( 'currentStyle' in elem ) {
+                return elem.currentStyle[ m ];
+            }
+        },
+
+        setStyle = function( elem, styles ) {
+            for ( var prop in styles ) {
+                elem.style[prop] = styles[ prop ];
+            }
+        },
+
+        getWH = function( elem, m ) {
+
+            var offset = 'offset' + m.substr(0,1).toUpperCase() + m.substr(1);
+
+            if ( elem[ offset ] ) {
+                return pf( elem[ offset ] );
+            }
+            return pf( getStyle( elem, m ) );
+        },
+
+        translate3d = function( elem, arr ) {
+            arr = arr || [0,0,0];
+            for ( var i in arr ) {
+                arr[i] += 'px';
+            }
+            elem.style.WebkitTransform = 'translate3d(' + arr.join(',') + ')';
+        };
+
+    Pan = function( elem, options ) {
+
+        var parent = elem.parentNode || window,
+            move = false,
+            decx = 0, decy = 0,
+            x = pf( getStyle( elem, 'left' ) ) || 0,
+            y = pf( getStyle( elem, 'top' ) ) || 0,
+            dx = x, cx = x,
+            dy = y, cy = y,
+            minx = 0, miny = 0,
+            mx, my,
+
+            loop = function() {
+
+                decx = dec(( dx - cx ) / SMOOTHNESS);
+                decy = dec(( dy - cy ) / SMOOTHNESS);
+
+                if ( !move && (decx || decy) ) {
+                    dx += decx;
+                    dy += decy;
+                    x = dx = M.min( 0, M.max( dx, minx ) );
+                    y = dy = M.min( 0, M.max( dy, miny ) );
+                } else {
+                    decx = 0;
+                    decy = 0;
+                }
+
+                mx = dx - cx;
+                my = dy - cy;
+
+                cx += dec( mx / SMOOTHNESS );
+                cy += dec( my / SMOOTHNESS );
+
+                // round up
+                if ( M.abs( mx ) < 0.8 ) {
+                    cx = Math.round( cx );
+                }
+
+                if ( M.abs( my ) < 0.8 ) {
+                    cy = Math.round( cy );
+                }
+
+                if ( cx || cy ) {
+                    if ( support ) {
+                        translate3d( elem, [ dec(cx), dec(cy), 0 ] );
+                    } else {
+                        elem.style.left = dec(cx) + 'px';
+                        elem.style.top = dec(cy) + 'px';
+                    }
+                }
+            },
+
+            onresize = function() {
+                minx = ( getWH( elem, 'width' ) - getWH( parent, 'width' ) ) * -1;
+                miny = ( getWH( elem, 'height' ) - getWH( parent, 'height' ) ) * -1;
+            },
+
+            tid = null,
+
+            onmove = function(e) {
+                if ( !move ) {
+                    return;
+                }
+
+                try {
+                    e.preventDefault();
+                } catch(err) {
+                    e.returnValue = false;
+                }
+
+                pos = coords( e );
+
+                dx = pos.x - x;
+                dy = pos.y - y;
+
+                if ( dx > 0 ) {
+                    x = pos.x;
+                } else if ( dx < minx ) {
+                    x = pos.x - minx;
+                }
+
+                if ( dy > 0 ) {
+                    y = pos.y;
+                } else if ( dy < miny ) {
+                    y = pos.y - miny;
+                }
+
+                dx = M.min( 0, M.max( dx, minx ) );
+                dy = M.min( 0, M.max( dy, miny ) );
+            },
+
+            onstart = function(e) {
+
+                try {
+                    e.preventDefault();
+                } catch(err) {
+                    e.returnValue = false;
+                }
+
+                pos = coords( e );
+
+                move = true;
+
+                x = pos.x - x;
+                y = pos.y - y;
+                decx = 0;
+                decy = 0;
+
+                addEvent( document, 'mousemove', onmove );
+                addEvent( document, 'touchmove', onmove );
+            },
+
+            onend = function() {
+                move = false;
+                x = dx;
+                y = dy;
+                removeEvent( document, 'mousemove', onmove );
+                removeEvent( document, 'touchmove', onmove );
+            },
+
+            hasPixelEvent = false,
+            delta = 0,
+
+            onwheel = function(e) {
+
+                // FF 3.6+
+                if ( e.type == 'MozMousePixelScroll' ) {
+
+                    hasPixelEvent = true;
+                    delta = e.detail / -7;
+
+                // other gecko
+                } else if ( e.type == 'DOMMouseScroll' ) {
+                    if ( hasPixelEvent ) {
+                        removeEvent( e.currentTarget, e.type, arguments.callee );
+                        e.preventDefault();
+                        return false;
+                    } else {
+                        delta = e.detail * -3;
+                    }
+
+                // webkit + IE
+                } else {
+                    delta = e.wheelDelta / 18;
+                }
+
+                // webkit horizontal
+                if ( 'wheelDeltaX' in e ) {
+                    dx += e.wheelDeltaX / 18;
+                }
+
+                // firefox horizontal
+                if ( 'HORIZONTAL_AXIS' in e && e.axis == e.HORIZONTAL_AXIS ) {
+                    dx += delta;
+                }
+
+                dy += delta;
+            };
+
+        if ( support ) {
+
+            elem.style.left = 0;
+            elem.style.top = 0;
+
+            translate3d( elem, [x,y,0] );
+
+            var images = elem.getElementsByTagName('img'),
+                i=0;
+
+            for(; images[i]; i++) {
+                translate3d( images[i] );
+            }
+        }
+
+        if ( getStyle( parent, 'position' ) == 'static' ) {
+            setStyle( parent, { position: 'relative' } );
+        }
+
+        setStyle( elem, { position: 'absolute' } );
+
+        addEvent( parent, 'mousedown', onstart );
+        addEvent( parent, 'touchstart', onstart );
+        addEvent( parent, 'mouseup', onend );
+        addEvent( parent, 'touchend', onend );
+        addEvent( parent, 'mouseout', onend );
+        addEvent( window, 'resize', onresize );
+
+        // mousewheel events
+        addEvent( parent, 'MozMousePixelScroll', onwheel );
+        addEvent( parent, 'DOMMouseScroll', onwheel );
+        addEvent( parent, 'mousewheel', onwheel );
+
+        onresize();
+
+        // IE
+        if ( attach ) {
+            document.attachEvent('ondragstart', retfalse);
+        }
+
+        this.destroy = function() {
+            window.clearInterval( tid );
+            removeEvent( parent, 'mousedown', onstart );
+            removeEvent( parent, 'touchstart', onstart );
+            removeEvent( parent, 'mouseup', onend );
+            removeEvent( parent, 'touchend', onend );
+            removeEvent( parent, 'mouseout', onend );
+            removeEvent( window, 'resize', onresize );
+            removeEvent( parent, 'MozMousePixelScroll', onwheel );
+            removeEvent( parent, 'DOMMouseScroll', onwheel );
+            removeEvent( parent, 'mousewheel', onwheel );
+
+            if ( attach ) {
+                document.detachEvent('ondragstart', retfalse);
+            }
+        };
+
+        // GO
+        tid = window.setInterval( loop, 10 );
+    };
+
+}( this ));
