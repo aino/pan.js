@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>pan.js</title>
+    <link href='http://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'>
+    <style>
+
+    *{margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;}
+
+    #parent{overflow:hidden;width:100%;height:100%;cursor:move;}
+    #pan{width:2400px;height:1500px}
+    #pan img{float:left}
+
+    #info{position:absolute;top:20px;left:20px;width:300px;padding:20px 20px 10px;background:#000;background:rgba(255,255,255,.85);
+        color:#888;color:rgba(0,0,0,.6);font:11px/15px 'Droid Sans Mono',monospace;}
+    #info strong{font-weight:normal;color:#000;}
+    #info p{margin-bottom:10px}
+
+    </style>
+    <script src="https://raw.github.com/aino/pan.js/master/pan.js"></script>
+</head>
+<body>
+    <div id="parent">
+        <div id="pan">
+            <img src="mountain-left.jpg" width="1200" height="1500">
+            <img src="mountain-right.jpg" width="1200" height="1500">
+        </div>
+    </div>
+    <div id="info">
+        <p><strong>pan.js</strong> adds native-like panning functionality for any element that is bigger than it’s container for iPad and iPhone and desktop browsers.</p>
+        <p>Try moving the mountains using you finger (iPad/iPhone), mousewheel/trackpad or click/drag.</p>
+        <p>No dependencies, 1.5k gzipped.</p>
+        <p>Tested in IE7+, FF3+, Opera 10+, Chrome, Safari, iPad 1 and iPhone 4.</p>
+    </div>
+    <script>
+    var pan = new Pan( document.getElementById('pan') );
+    </script>
+</body>
+</html>
