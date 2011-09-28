@@ -14,20 +14,30 @@
     #pan{width:2400px;height:1500px}
     #pan img{float:left}
 
-    #info{position:absolute;top:20px;left:20px;width:300px;padding:20px 20px 10px;background:#fff;background:rgba(255,255,255,.85);
+    #info{position:absolute;top:20px;left:20px;width:290px;padding:15px 20px 10px 20px;background:#fff;background:rgba(255,255,255,.85);
         color:#888;color:rgba(0,0,0,.6);font:11px/15px 'Droid Sans Mono',monospace;}
     #info strong{font-weight:normal;color:#000;}
     #info p{margin-bottom:10px}
 
-    a{color:#4787b8;text-decoration:underline}
-    a:hover{color:#c32}
+    #close{width:18px;height:18px;position:absolute;text-align:right;right:6px;top:6px;
+        font-size:22px;line-height:12px;cursor:pointer;}
+    #close:hover,
+    #close:active{color:#c32}
+    #info{ -webkit-transition: opacity 0.2s linear; -moz-transition: opacity 0.2s linear; transition: opacity 0.2s linear; }
+    #info.hidden{ opacity:0; filter:alpha(opacity=0) }
 
+    a{color:#4787b8;text-decoration:underline}
+    a:hover,
+    a:active{color:#c32}
+
+    /* iphone */
     @media only screen and (max-device-width: 480px) {
         #info{ width: 200px; font-size:9px;line-height:12px }
         #info p:nth-child(3),
         #info p:nth-child(4){ display:none }
     }
 
+    /* retina */
     @media only screen and (-webkit-min-device-pixel-ratio: 2) {
         #pan{ width: 1200px; height: 750px}
         #pan img{ width: 600px; height: 750px}
@@ -44,6 +54,7 @@
         </div>
     </div>
     <div id="info">
+        <div id="close">&#215;</div>
         <p><strong>pan.js</strong> adds native-like panning functionality using JavaScript and CSS3.
             Optimized for iPad, iPhone and desktop browsers.</p>
         <p>Move the mountains using you finger, mousewheel/trackpad or click/drag.</p>
@@ -56,7 +67,21 @@
         </p>
     </div>
     <script>
+
+    // init the pan
     var pan = new Pan( document.getElementById('pan') );
+
+    // add close
+    var info = document.getElementById('info');
+
+    document.getElementById('close').onclick = function() {
+        info.className = 'hidden';
+        window.setTimeout(function() {
+            info.style.display = 'none'
+        }, 210);
+    };
+
+
     </script>
 </body>
 </html>
