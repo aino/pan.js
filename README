@@ -1,19 +1,16 @@
-pan.js adds native-like panning functionality
-for any element that is bigger than it’s container
-for iPad and iPhone and desktop browsers.
+pan.js adds native-like panning functionality using JavaScript for any element that is bigger than it’s container.
+Optimized for iPad, iPhone and desktop browsers.
 
-Download the demo and try it out.
+pan.js measures the element and it’s parent, so make sure you have a width/height for the elements and overflow:hidden for the parent.
+See the demo included for a simple implementation.
 
 Browser support: IE7+, FF3+, Opera 10+, Chrome, Safari, iPad and iPhone (and probably more devices as well).
 
 --
 
 Usage:
-  Pan( HTMLElement ); // adds panning for the element
+Pan( HTMLElement ); // adds panning for the element
 
---
-
-Methods:
-There is just one method exposed for destroying the pan:
-  var pan = new Pan( HTMLElment );
-  pan.destroy(); // removes all events
+Destroy the pan:
+var pan = new Pan( HTMLElement ); // adds panning
+pan.destroy(); // removes all events
