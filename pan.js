@@ -251,6 +251,7 @@
                 // firefox horizontal
                 if ( 'HORIZONTAL_AXIS' in e && e.axis == e.HORIZONTAL_AXIS ) {
                     dx += delta;
+                    return;
                 }
 
                 dy += delta;
