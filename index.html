@@ -22,6 +22,17 @@
     a{color:#4787b8;text-decoration:underline}
     a:hover{color:#c32}
 
+    @media only screen and (max-device-width: 480px) {
+        #info{ width: 200px; font-size:10px }
+        #info p:nth-child(3),
+        #info p:nth-child(4){ display:none }
+    }
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 2) {
+        #pan{ width: 1200px; height: 750px}
+        #pan img{ width: 600px; height: 750px}
+    }
+
     </style>
     <script src="https://raw.github.com/aino/pan.js/master/pan.js"></script>
 </head>
