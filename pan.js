@@ -193,7 +193,7 @@
 
                 pos = coords( e );
 
-                if ( options.mousemove ) {
+                if ( options.mousemove && !touch ) {
                     dx = x - M.abs( pos.x/width * minx );
                     dy = y - M.abs( pos.y/height * miny );
                 } else {
@@ -310,7 +310,7 @@
 
         setStyle( elem, { position: 'absolute' } );
 
-        if ( options.mousemove ) {
+        if ( options.mousemove && !touch ) {
 
             move = true;
             options.smoothness *= 5;
