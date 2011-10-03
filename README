@@ -8,8 +8,27 @@ Browser support: IE7+, FF3+, Opera 10+, Chrome, Safari, iPad and iPhone (and pro
 
 --
 
+New since 0.2: Options
+
+Now you can pass options to the Pan using an object as second argument, example:
+
+Pan(document.getElementById('pan'), {
+    mousemove: true,
+    smoothness: 4
+});
+
+Available options:
+
+name        type     default   description
+--------------------------------------------------------------------------------------------------------------------
+mousemove   Boolean  false     pan when moving the mouse instead of click/drag (only affects desktop browsers)
+fps         Number   80        Framerate per seconds, tune this to maximize performance on target devices
+smoothness  Number   3.2       Decceleration multiplier. Adjust to suit your application.
+
+--
+
 Usage:
-Pan( HTMLElement ); // adds panning for the element
+Pan( HTMLElement, Options ); // adds panning for the element
 
 Destroy the pan:
 var pan = new Pan( HTMLElement ); // adds panning

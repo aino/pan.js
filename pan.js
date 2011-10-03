@@ -1,5 +1,5 @@
 /**
- * pan.js v 0.1 2011-09-28
+ * pan.js v 0.2 2011-10-04
  * http://aino.com
  *
  * Copyright (c) 2011, Aino
@@ -11,17 +11,22 @@
 
 (function(window) {
 
-    var SMOOTHNESS = 3.2,
-
-        document = window.document,
+    var document = window.document,
 
         coords = function( e ) {
+
+            var html = document.documentElement,
+                get = function( e, lr ) {
+                    var scr = 'scroll' + lr;
+                    return e.clientX + ( html[ scr ] ? html[ scr ] : document.body[ scr ] );
+                };
+
             return 'touches' in e && e.touches.length ? {
                 x: e.touches[0].pageX,
                 y: e.touches[0].pageY
             } : {
-                x: e.clientX,
-                y: e.clientY
+                x: e.pageX,
+                y: e.pageY
             };
         },
 
@@ -42,6 +47,8 @@
         pos,
 
         support = ( typeof document.documentElement.style.WebkitTransform !== 'undefined' ),
+
+        touch = !!( 'ontouchstart' in document ),
 
         attach = !!( 'attachEvent' in document ),
 
@@ -99,7 +106,14 @@
 
     Pan = function( elem, options ) {
 
-        var parent = elem.parentNode || window,
+        options = options || {};
+
+        var defaults = {
+                mousemove: false,
+                fps: 80,
+                smoothness: 3.2
+            },
+            parent = elem.parentNode || window,
             move = false,
             decx = 0, decy = 0,
             x = pf( getStyle( elem, 'left' ) ) || 0,
@@ -107,28 +121,31 @@
             dx = x, cx = x,
             dy = y, cy = y,
             minx = 0, miny = 0,
-            mx, my,
+            mx, my, width, height,
 
             loop = function() {
 
-                decx = dec(( dx - cx ) / SMOOTHNESS);
-                decy = dec(( dy - cy ) / SMOOTHNESS);
+                if ( touch || !options.mousemove ) {
 
-                if ( !move && (decx || decy) ) {
-                    dx += decx;
-                    dy += decy;
-                    x = dx = M.min( 0, M.max( dx, minx ) );
-                    y = dy = M.min( 0, M.max( dy, miny ) );
-                } else {
-                    decx = 0;
-                    decy = 0;
+                    decx = dec(( dx - cx ) / options.smoothness);
+                    decy = dec(( dy - cy ) / options.smoothness);
+
+                    if ( !move && (decx || decy) ) {
+                        dx += decx;
+                        dy += decy;
+                        x = dx = M.min( 0, M.max( dx, minx ) );
+                        y = dy = M.min( 0, M.max( dy, miny ) );
+                    } else {
+                        decx = 0;
+                        decy = 0;
+                    }
                 }
 
                 mx = dx - cx;
                 my = dy - cy;
 
-                cx += dec( mx / SMOOTHNESS );
-                cy += dec( my / SMOOTHNESS );
+                cx += dec( mx / options.smoothness );
+                cy += dec( my / options.smoothness );
 
                 // round up
                 if ( M.abs( mx ) < 0.8 ) {
@@ -150,8 +167,10 @@
             },
 
             onresize = function() {
-                minx = ( getWH( elem, 'width' ) - getWH( parent, 'width' ) ) * -1;
-                miny = ( getWH( elem, 'height' ) - getWH( parent, 'height' ) ) * -1;
+                width  = getWH( parent, 'width' );
+                height = getWH( parent, 'height' );
+                minx = ( getWH( elem, 'width' ) - width ) * -1;
+                miny = ( getWH( elem, 'height' ) - height ) * -1;
             },
 
             tid = null,
@@ -167,23 +186,31 @@
                     e.returnValue = false;
                 }
 
+                if ( e.touches && e.touches.length > 1 ) {
+                    return;
+                }
+
                 pos = coords( e );
 
-                dx = pos.x - x;
-                dy = pos.y - y;
+                if ( options.mousemove ) {
+                    dx = x - M.abs( pos.x/width * minx );
+                    dy = y - M.abs( pos.y/height * miny );
+                } else {
+                    dx = pos.x - x;
+                    dy = pos.y - y;
 
-                if ( dx > 0 ) {
-                    x = pos.x;
-                } else if ( dx < minx ) {
-                    x = pos.x - minx;
+                    if ( dx > 0 ) {
+                        x = pos.x;
+                    } else if ( dx < minx ) {
+                        x = pos.x - minx;
+                    }
+
+                    if ( dy > 0 ) {
+                        y = pos.y;
+                    } else if ( dy < miny ) {
+                        y = pos.y - miny;
+                    }
                 }
-
-                if ( dy > 0 ) {
-                    y = pos.y;
-                } else if ( dy < miny ) {
-                    y = pos.y - miny;
-                }
-
                 dx = M.min( 0, M.max( dx, minx ) );
                 dy = M.min( 0, M.max( dy, miny ) );
             },
@@ -257,6 +284,10 @@
                 dy += delta;
             };
 
+        for ( var d in defaults ) {
+            options[d] = d in options ? options[d] : defaults[d];
+        }
+
         if ( support ) {
 
             elem.style.left = 0;
@@ -278,17 +309,27 @@
 
         setStyle( elem, { position: 'absolute' } );
 
-        addEvent( parent, 'mousedown', onstart );
-        addEvent( parent, 'touchstart', onstart );
-        addEvent( parent, 'mouseup', onend );
-        addEvent( parent, 'touchend', onend );
-        addEvent( parent, 'mouseout', onend );
-        addEvent( window, 'resize', onresize );
+        if ( options.mousemove ) {
 
-        // mousewheel events
-        addEvent( parent, 'MozMousePixelScroll', onwheel );
-        addEvent( parent, 'DOMMouseScroll', onwheel );
-        addEvent( parent, 'mousewheel', onwheel );
+            move = true;
+            options.smoothness *= 5;
+            addEvent( document, 'mousemove', onmove );
+
+        } else {
+
+            addEvent( parent, 'mousedown', onstart );
+            addEvent( parent, 'mouseup', onend );
+            addEvent( parent, 'mouseout', onend );
+            addEvent( parent, 'MozMousePixelScroll', onwheel );
+            addEvent( parent, 'DOMMouseScroll', onwheel );
+            addEvent( parent, 'mousewheel', onwheel );
+
+        }
+
+        addEvent( parent, 'touchstart', onstart );
+        addEvent( parent, 'touchend', onend );
+
+        addEvent( window, 'resize', onresize );
 
         onresize();
 
@@ -308,6 +349,7 @@
             removeEvent( parent, 'MozMousePixelScroll', onwheel );
             removeEvent( parent, 'DOMMouseScroll', onwheel );
             removeEvent( parent, 'mousewheel', onwheel );
+            removeEvent( document, 'mousemove', onmove );
 
             if ( attach ) {
                 document.detachEvent('ondragstart', retfalse);
@@ -315,7 +357,7 @@
         };
 
         // GO
-        tid = window.setInterval( loop, 10 );
+        tid = window.setInterval( loop, 1000/options.fps );
     };
 
 }( this ));
