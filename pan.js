@@ -17,16 +17,17 @@
 
             var html = document.documentElement,
                 get = function( e, lr ) {
-                    var scr = 'scroll' + lr;
-                    return e.clientX + ( html[ scr ] ? html[ scr ] : document.body[ scr ] );
+                    var scr = 'scroll' + lr,
+                        client = lr == 'Left' ? 'clientX' : 'clientY';
+                    return e[client] + ( html[ scr ] ? html[ scr ] : document.body[ scr ] );
                 };
 
             return 'touches' in e && e.touches.length ? {
                 x: e.touches[0].pageX,
                 y: e.touches[0].pageY
             } : {
-                x: e.pageX,
-                y: e.pageY
+                x: e.pageX || get( e, 'Left'),
+                y: e.pageY || get( e, 'Top')
             };
         },
 
